@@ -1,7 +1,9 @@
+import 'package:frontend/api/location_repository.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-Future<Position> determinePosition() async {
+Future<Position> determinePosition(
+    LocationRepository locationRepository) async {
   bool serviceEnabled;
   LocationPermission permission;
 
@@ -35,9 +37,12 @@ Future<Position> determinePosition() async {
 
   // When we reach here, permissions are granted and we can
   // continue accessing the position of the device.
-  return await Geolocator.getCurrentPosition();
+  final currentPosition = await Geolocator.getCurrentPosition();
+  await locationRepository.setLocation(currentPosition);
+  return currentPosition;
 }
 
 final locationProvider = FutureProvider<Position>((ref) async {
-  return await determinePosition();
+  final locationRepository = ref.watch(locationRepositoryProvider);
+  return await determinePosition(locationRepository);
 });

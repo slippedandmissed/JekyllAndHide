@@ -42,6 +42,11 @@ dependencies:
   geolocator: ^9.0.2 # FIXME: set up for iOS and Android https://pub.dev/packages/geolocator
   geolocator_windows: ^0.1.1
   flutter_riverpod: ^2.3.6
+  localstorage: ^4.0.1+2
+  freezed_annotation: ^2.2.0
+  json_annotation: ^4.8.1
+  uuid: ^3.0.7
+  dio: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -55,6 +60,8 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   auto_route_generator: ^7.1.1
   build_runner: ^2.4.5
+  freezed: ^2.3.5
+  json_serializable: ^6.7.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
