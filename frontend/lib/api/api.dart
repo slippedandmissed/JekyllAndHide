@@ -1,90 +1,123 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:uuid/uuid.dart';
-import 'package:dio/dio.dart';
 
-const apiUrl = "http://localhost:8000";
-
-class Api {
-  final dio = Dio(BaseOptions(baseUrl: apiUrl));
-  final localstorage = LocalStorage("api");
-
-  Api();
+/// This class provides helpful wrapper methods around HTTP requests,
+/// transforming the JSON response data into a strongly-typed object.
+/// Note that the provided wrapper methods are designed for use with
+/// WebSec, most commonly in automatically generated Repository classes,
+/// and conform to WebSec's standards rather than those of a generalised
+/// REST framework.
+class HttpService {
+  /// The HTTP client this wraps.
+  final Dio _dio;
+  final LocalStorage _localStorage = LocalStorage("api");
 
   Future<String> get apiId async {
-    await localstorage.ready;
-    final existingId = localstorage.getItem("api_id");
-    print("Existing ID: $existingId");
+    await _localStorage.ready;
+    final existingId = _localStorage.getItem("api_id");
     if (existingId == null) {
-      print("Case 1");
       final newId = const Uuid().v4();
-      print("New ID: $newId");
-      localstorage.setItem("api_id", newId);
+      _localStorage.setItem("api_id", newId);
       return newId;
     }
-    print("Case 2");
     return existingId as String;
   }
 
-  Future<dynamic> get({
-    required String path,
-    required dynamic data,
-  }) async {
-    final response = await dio.get(
-      path,
-      options: Options(
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          'Accept': '*/*'
-        },
-      ),
-      data: jsonEncode(data),
-    );
-    if (response.statusCode == null) {
-      throw "Null Status Code";
-    }
-    if (response.statusCode! >= 300 || response.statusCode! < 200) {
-      throw response.statusCode!;
-    }
-    return response.data;
+  HttpService(this._dio) {
+    _dio.interceptors.add(InterceptorsWrapper(onResponse: (e, handler) {
+      return handler.next(e);
+    }));
   }
 
-  Future<dynamic> post({
-    required String path,
-    required dynamic data,
-  }) async {
-    final response = await dio.post(
-      path,
-      options: Options(
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          'Accept': '*/*'
+  /// The underlying HTTP handler
+  Dio get dio => _dio;
+
+  /// Performs a GET request to the specified [path].
+  /// The response, if returned with code 200 (OK), is transformed
+  /// into an object of type [Res] via the provided [fromJson] method.
+  ///
+  /// ```dart
+  /// UserResponse? data = await httpService.get(
+  ///   "/users",
+  ///   UserRequest(id: 1),
+  ///   UserResponse.fromJson,
+  /// );
+  /// ```
+  Future<Res?> get<Req, Res>(String path, Req input,
+      Res Function(Map<String, Object?>) fromJson) async {
+    try {
+      final response = await _dio.get<Map<String, Object?>>(
+        path,
+        queryParameters: {
+          "json": jsonEncode(input),
+          "id": await apiId,
         },
-      ),
-      data: jsonEncode({
-        "data": jsonEncode(data),
-        "api_id": await apiId,
-      }),
-    );
-    if (response.statusCode == null) {
-      throw "Null Status Code";
+      );
+      final data = response.data;
+      if (response.statusCode == 200 && data != null) {
+        return fromJson(data);
+      }
+    } on DioException catch (e) {
+      debugPrint(e.message);
     }
-    if (response.statusCode! >= 300 || response.statusCode! < 200) {
-      throw response.statusCode!;
+    return null;
+  }
+
+  /// Performs a POST request to the specified [path].
+  /// The response, if returned with code 200 (OK), is transformed
+  /// into an object of type [Res] via the provided [fromJson] method.
+  ///
+  /// ```dart
+  /// LoginResponse? data = await httpService.post(
+  ///   "/login",
+  ///   LoginRequest(username, password),
+  ///   LoginResponse.fromJson,
+  /// );
+  /// ```
+  Future<Res?> post<Req, Res>(String path, Req input,
+      Res Function(Map<String, Object?>) fromJson) async {
+    try {
+      final response = await _dio.post<Map<String, Object?>>(path,
+          data: jsonEncode({
+            "json": jsonEncode(input),
+            "id": await apiId,
+          }));
+      final data = response.data;
+      if (response.statusCode == 200 && data != null) {
+        return fromJson(data);
+      }
+    } on DioException catch (e) {
+      debugPrint(e.message);
     }
-    return response.data;
+    return null;
   }
 }
 
-final apiProvider = Provider((ref) {
-  return Api();
-});
+final httpProvider = Provider(
+  (ref) {
+    String baseUrl;
+    if (!kDebugMode) {
+      baseUrl = "FIXME: add production database url";
+    } else if (!kIsWeb && Platform.isAndroid) {
+      baseUrl = "http://10.0.2.2:8000";
+    } else {
+      baseUrl = "http://localhost:8000";
+    }
+    return HttpService(
+      Dio(
+        BaseOptions(baseUrl: baseUrl),
+      ),
+    );
+  },
+);
 
 final apiIdProvider = FutureProvider((ref) async {
-  final api = ref.watch(apiProvider);
-  return await api.apiId;
+  final http = ref.watch(httpProvider);
+  return await http.apiId;
 });

@@ -15,17 +15,16 @@ class Beat with _$Beat {
 }
 
 class HeartBeatRepository {
-  final Api api;
+  final HttpService _http;
 
-  const HeartBeatRepository({required this.api});
+  const HeartBeatRepository({required HttpService http}) : _http = http;
 
-  Future<Beat> heart() async {
-    final response = await api.get(path: "/heart", data: {});
-    return Beat.fromJson(response);
+  Future<Beat?> heart() async {
+    return await _http.get("/heart", {}, Beat.fromJson);
   }
 }
 
 final heartBeatRepositoryProvider = Provider((ref) {
-  final api = ref.watch(apiProvider);
-  return HeartBeatRepository(api: api);
+  final http = ref.watch(httpProvider);
+  return HeartBeatRepository(http: http);
 });

@@ -4,7 +4,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend/api/api.dart';
 import 'package:frontend/api/location_repository.dart';
 import 'package:frontend/api/name_repository.dart';
-import 'package:frontend/location.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';

@@ -2,16 +2,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:frontend/api/api.dart';
 
 class NameRepository {
-  final Api api;
+  final HttpService _http;
 
-  const NameRepository({required this.api});
+  const NameRepository({required HttpService http}) : _http = http;
 
   Future<void> setName(String name) async {
-    await api.post(path: "/my-name", data: {"name": name});
+    await _http.post("/my-name", {"name": name}, (_) => null);
   }
 }
 
 final nameRepositoryProvider = Provider((ref) {
-  final api = ref.watch(apiProvider);
-  return NameRepository(api: api);
+  final http = ref.watch(httpProvider);
+  return NameRepository(http: http);
 });

@@ -21,3 +21,17 @@ Map<String, dynamic> _$$_NameAndLocationToJson(_$_NameAndLocation instance) =>
       'lat': instance.lat,
       'lng': instance.lng,
     };
+
+_$_EveryonesLocations _$$_EveryonesLocationsFromJson(
+        Map<String, dynamic> json) =>
+    _$_EveryonesLocations(
+      results: (json['results'] as List<dynamic>)
+          .map((e) => NameAndLocation.fromJson(e as Map<String, dynamic>))
+          .toList(),
+    );
+
+Map<String, dynamic> _$$_EveryonesLocationsToJson(
+        _$_EveryonesLocations instance) =>
+    <String, dynamic>{
+      'results': instance.results,
+    };
