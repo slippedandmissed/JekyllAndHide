@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:frontend/api/api.dart';
+import 'package:frontend/periodic_streams.dart';
 import 'package:geolocator/geolocator.dart';
 
 part 'location_repository.freezed.dart';
@@ -97,7 +98,7 @@ final locationRepositoryProvider = Provider((ref) {
 
 final everyonesLocationsProvider = StreamProvider((ref) {
   final locationRepository = ref.watch(locationRepositoryProvider);
-  return Stream.periodic(
+  return periodicStream(
     const Duration(minutes: 10),
   ).asyncMap(
     (i) => locationRepository.getEveryonesLocations(),
@@ -106,7 +107,7 @@ final everyonesLocationsProvider = StreamProvider((ref) {
 
 final locationProvider = StreamProvider<Position>((ref) {
   final locationRepository = ref.watch(locationRepositoryProvider);
-  return Stream.periodic(
+  return periodicStream(
     const Duration(minutes: 10),
   ).asyncMap(
     (i) => locationRepository.getMyLocation(),
