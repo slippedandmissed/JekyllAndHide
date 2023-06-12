@@ -4,8 +4,19 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:frontend/game_services.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:uuid/uuid.dart';
+
+class ApiResponse<Res> {
+  final int? statusCode;
+  final Res? result;
+
+  const ApiResponse({
+    required this.statusCode,
+    required this.result,
+  });
+}
 
 /// This class provides helpful wrapper methods around HTTP requests,
 /// transforming the JSON response data into a strongly-typed object.
@@ -16,6 +27,7 @@ import 'package:uuid/uuid.dart';
 class HttpService {
   /// The HTTP client this wraps.
   final Dio _dio;
+  final StoredGameCodeService _storedGameCodeService;
   final LocalStorage _localStorage = LocalStorage("api");
 
   Future<String> get apiId async {
@@ -29,7 +41,11 @@ class HttpService {
     return existingId as String;
   }
 
-  HttpService(this._dio) {
+  HttpService({
+    required Dio dio,
+    required StoredGameCodeService storedGameCodeService,
+  })  : _dio = dio,
+        _storedGameCodeService = storedGameCodeService {
     _dio.interceptors.add(InterceptorsWrapper(onResponse: (e, handler) {
       return handler.next(e);
     }));
@@ -49,24 +65,36 @@ class HttpService {
   ///   UserResponse.fromJson,
   /// );
   /// ```
-  Future<Res?> get<Req, Res>(String path, Req input,
-      Res Function(Map<String, Object?>) fromJson) async {
+  Future<ApiResponse<Res>> get<Req, Res>(
+    String path,
+    Req input,
+    Res Function(Map<String, Object?>) fromJson, {
+    String? gameCodeOverride,
+  }) async {
     try {
-      final response = await _dio.get<Map<String, Object?>>(
+      final response = await _dio.get(
         path,
         queryParameters: {
           "json": jsonEncode(input),
           "id": await apiId,
+          "gameCode": gameCodeOverride ?? await _storedGameCodeService.code,
         },
       );
       final data = response.data;
       if (response.statusCode == 200 && data != null) {
-        return fromJson(data);
+        return ApiResponse(
+          statusCode: response.statusCode,
+          result: fromJson(data),
+        );
       }
+      return ApiResponse(
+        statusCode: response.statusCode,
+        result: null,
+      );
     } on DioException catch (e) {
       debugPrint(e.message);
     }
-    return null;
+    return const ApiResponse(statusCode: null, result: null);
   }
 
   /// Performs a POST request to the specified [path].
@@ -80,22 +108,34 @@ class HttpService {
   ///   LoginResponse.fromJson,
   /// );
   /// ```
-  Future<Res?> post<Req, Res>(String path, Req input,
-      Res Function(Map<String, Object?>) fromJson) async {
+  Future<ApiResponse<Res?>> post<Req, Res>(
+    String path,
+    Req input,
+    Res Function(Map<String, Object?>) fromJson, {
+    String? gameCodeOverride,
+  }) async {
     try {
-      final response = await _dio.post<Map<String, Object?>>(path,
+      final response = await _dio.post(path,
           data: jsonEncode({
             "json": jsonEncode(input),
             "id": await apiId,
+            "gameCode": gameCodeOverride ?? await _storedGameCodeService.code,
           }));
       final data = response.data;
       if (response.statusCode == 200 && data != null) {
-        return fromJson(data);
+        return ApiResponse(
+          statusCode: response.statusCode,
+          result: fromJson(data),
+        );
       }
+      return ApiResponse(
+        statusCode: response.statusCode,
+        result: null,
+      );
     } on DioException catch (e) {
       debugPrint(e.message);
     }
-    return null;
+    return const ApiResponse(statusCode: null, result: null);
   }
 }
 
@@ -109,10 +149,15 @@ final httpProvider = Provider(
     } else {
       baseUrl = "http://localhost:8000";
     }
+    final storedGameCodeService = ref.watch(storedGameCodeServiceProvider);
     return HttpService(
-      Dio(
-        BaseOptions(baseUrl: baseUrl),
+      dio: Dio(
+        BaseOptions(
+          baseUrl: baseUrl,
+          validateStatus: (status) => true,
+        ),
       ),
+      storedGameCodeService: storedGameCodeService,
     );
   },
 );

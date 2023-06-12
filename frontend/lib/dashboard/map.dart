@@ -4,7 +4,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:frontend/api/api.dart';
 import 'package:frontend/api/location_repository.dart';
 import 'package:frontend/api/name_repository.dart';
-import 'package:frontend/ui-library/js_circle_button.dart';
+import 'package:frontend/ui-library/jh_circle_button.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -31,7 +31,6 @@ class _MapPageState extends ConsumerState<MapPage> {
   @override
   Widget build(BuildContext context) {
     final location = ref.watch(locationProvider);
-    ref.read(nameRepositoryProvider).setName("Jeff2");
 
     final everyonesLocations = ref.watch(everyonesLocationsProvider);
     final apiId = ref.watch(apiIdProvider);

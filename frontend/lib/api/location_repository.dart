@@ -48,10 +48,11 @@ class LocationRepository {
       {},
       EveryonesLocations.fromJson,
     );
-    return response?.results ?? [];
+    return response.result?.results ?? [];
   }
 
   Future<Position> getMyLocation() async {
+    // FIXME: don't fetch location if you're not currently in a game
     bool serviceEnabled;
     LocationPermission permission;
 

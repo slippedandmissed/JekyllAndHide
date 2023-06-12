@@ -20,7 +20,7 @@ class HeartBeatRepository {
   const HeartBeatRepository({required HttpService http}) : _http = http;
 
   Future<Beat?> heart() async {
-    return await _http.get("/heart", {}, Beat.fromJson);
+    return (await _http.get("/heart", {}, Beat.fromJson)).result;
   }
 }
 

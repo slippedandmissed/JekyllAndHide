@@ -33,6 +33,12 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const TeamsPage(),
       );
     },
+    JoinRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const JoinPage(),
+      );
+    },
   };
 }
 
@@ -74,6 +80,20 @@ class TeamsRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'TeamsRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [JoinPage]
+class JoinRoute extends PageRouteInfo<void> {
+  const JoinRoute({List<PageRouteInfo>? children})
+      : super(
+          JoinRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'JoinRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }
